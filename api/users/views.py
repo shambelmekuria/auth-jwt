@@ -40,19 +40,35 @@ class LoginAPIView(APIView):
                 value=access,
                 httponly=True,
                 secure=True,
-                samesite="Strict"
+                samesite="Strict",
             )
             response.set_cookie(
                 key="refresh_token",
                 value=str(refresh),
                 httponly=True,
                 secure=True,
-                samesite="Strict"
+                samesite="Strict",
             )
             return response
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LogoutAPIView(APIView):
-    def post(self,request):
-        pass
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refrsh_token")
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception as e:
+                return Response(
+                    {"error": "Error in validating token " + str(e)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            response = Response(
+                {"message": "Sucessfully Logout"}, status=status.HTTP_200_OK
+
+            )
+            response.delete_cookie('refresh_token')
+            response.delete_cookie('access_token')
+            return response
